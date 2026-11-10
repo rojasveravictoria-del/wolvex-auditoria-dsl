@@ -22,7 +22,7 @@ button:disabled{opacity:.6;cursor:wait}#e{color:var(--bad);font-size:13px;min-he
 const SALT=Uint8Array.from(atob('hbf+/IuUUuzpsYAvhIAKqQ=='),c=>c.charCodeAt(0)), ITER=250000;
 async function derive(pw){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt:SALT,iterations:ITER,hash:'SHA-256'},k,{name:'AES-GCM',length:256},true,['decrypt'])}
 async function open_(key){
-  const b=await (await fetch('kit.bin')).arrayBuffer();
+  const b=await (await fetch('kit.bin',{cache:'no-cache'})).arrayBuffer();
   const p=await crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(b,0,12)},key,new Uint8Array(b,12));
   window.__KEY=key; const h=new TextDecoder().decode(p);
   document.open(); document.write(h); document.close(); window.__KEY=key;
