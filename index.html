@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Auditoría DSL Wolvex</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
+<style>
+:root{--bg:#F8FAFC;--surface:#fff;--ink:#1E293B;--mute:#64748B;--line:#CBD5E1;--brand:#7C3AED;--bad:#E11D48}
+@media (prefers-color-scheme:dark){:root{--bg:#0B1120;--surface:#111A2E;--ink:#E2E8F0;--mute:#94A3B8;--line:#334155;--brand:#8B5CF6;--bad:#FB7185}}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font:400 15px/1.5 Roboto,system-ui,sans-serif;min-height:100vh;display:grid;place-items:center;padding:16px}
+form{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:28px;width:min(380px,100%);display:grid;gap:14px}
+.b{font-weight:700;color:var(--brand)}h1{font-size:20px;font-weight:500}p{color:var(--mute);font-size:14px}
+input{height:44px;border:1px solid var(--line);border-radius:10px;padding:0 14px;font:inherit;background:var(--bg);color:var(--ink)}
+input:focus{outline:2px solid var(--brand);outline-offset:1px}
+button{height:44px;border:0;border-radius:999px;background:var(--brand);color:#fff;font:500 15px Roboto,sans-serif;cursor:pointer}
+button:disabled{opacity:.6;cursor:wait}#e{color:var(--bad);font-size:13px;min-height:1em}
+</style></head><body>
+<form id="f"><div class="b">wolvex</div><h1>Auditoría del sistema de diseño</h1><p>Ingresa la contraseña para ver la auditoría.</p>
+<input id="pw" type="password" autocomplete="current-password" placeholder="Contraseña" aria-label="Contraseña" autofocus>
+<div id="e" role="alert"></div><button id="go">Entrar</button></form>
+<script>
+const SALT=Uint8Array.from(atob('hbf+/IuUUuzpsYAvhIAKqQ=='),c=>c.charCodeAt(0)), ITER=250000;
+async function derive(pw){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt:SALT,iterations:ITER,hash:'SHA-256'},k,{name:'AES-GCM',length:256},true,['decrypt'])}
+async function open_(key){
+  const b=await (await fetch('data.bin')).arrayBuffer();
+  const p=await crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(b,0,12)},key,new Uint8Array(b,12));
+  window.__KEY=key; const h=new TextDecoder().decode(p);
+  document.open(); document.write(h); document.close(); window.__KEY=key;
+}
+async function tryKey(raw){try{const k=await crypto.subtle.importKey('raw',raw,'AES-GCM',true,['decrypt']);await open_(k);return true}catch(e){return false}}
+(async()=>{try{const s=sessionStorage.getItem('wvx-k');if(s&&await tryKey(Uint8Array.from(atob(s),c=>c.charCodeAt(0))))return}catch(e){}})();
+document.getElementById('f').onsubmit=async e=>{e.preventDefault();const go=document.getElementById('go'),er=document.getElementById('e');go.disabled=true;go.textContent='Abriendo…';er.textContent='';
+  try{const k=await derive(document.getElementById('pw').value);const raw=new Uint8Array(await crypto.subtle.exportKey('raw',k));
+    try{sessionStorage.setItem('wvx-k',btoa(String.fromCharCode(...raw)))}catch(x){}
+    await open_(k)}catch(x){er.textContent='Contraseña incorrecta.';go.disabled=false;go.textContent='Entrar'}};
+</script></body></html>
